@@ -55,4 +55,5 @@ python install.py
 | Skill | Opis |
 |-------|------|
 | `audio-transcript` | Transkrypcja audio z podziałem na mówców (Gemini Flash) |
+| `joemonster-art` | Formatowanie artykułów HTML dla JoeMonster.org |
 | `web-scraper` | Scraping artykułów do markdown (direct fetch + Firecrawl) |
