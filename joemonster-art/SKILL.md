@@ -97,6 +97,10 @@ Dla większości tekstów:
 
 Klucz: **Konkret + Prostota + Transformacja = Silny tekst**
 
+## Praca ze źródłami
+
+Do przeglądania źródeł (weryfikacja informacji, pobieranie zdjęć ilustracyjnych) używaj skilla `web-scraper`. Pozwala pobrać pełną treść artykułu jako markdown wraz z listą obrazków i ich URL-ami.
+
 ## HTML Structure
 
 - Use `<br><br>` between paragraphs – CMS JM strips `<p>` tags

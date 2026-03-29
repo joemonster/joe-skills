@@ -45,7 +45,7 @@ class HTMLToMarkdown(HTMLParser):
     """Prosty konwerter HTML -> Markdown wystarczający do artykułów."""
 
     BLOCK_TAGS = {"p", "div", "section", "article", "main", "blockquote", "li", "tr", "br", "hr"}
-    SKIP_TAGS = {"script", "style", "noscript", "nav", "footer", "header", "aside", "form", "button", "svg"}
+    SKIP_TAGS = {"script", "style", "noscript", "nav", "footer", "header", "aside", "form", "button", "svg", "title"}
     HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
 
     def __init__(self):
@@ -153,11 +153,25 @@ class HTMLToMarkdown(HTMLParser):
         else:
             self.result.append(data)
 
-    def get_markdown(self) -> str:
+    def get_markdown(self, article_mode: bool = False) -> str:
         text = "".join(self.result)
-        # Czyść nadmiarowe puste linie
+        # Normalizuj line endings
+        text = text.replace('\r\n', '\n')
+        # Zamień ciągi 2+ spacji/tabów na jedną spację (w obrębie linii)
+        text = re.sub(r'[^\S\n]{2,}', ' ', text)
+        # Usuń trailing whitespace z każdej linii
+        text = re.sub(r'(?m)[ \t]+$', '', text)
+        # Zamień 3+ nowych linii na 2
         text = re.sub(r'\n{3,}', '\n\n', text)
-        return text.strip()
+        text = text.strip()
+        if article_mode:
+            # Utnij wszystko przed pierwszym h1
+            h1_pos = text.find("\n# ")
+            if h1_pos == -1:
+                h1_pos = 0 if text.startswith("# ") else -1
+            if h1_pos >= 0:
+                text = text[h1_pos:].lstrip("\n")
+        return text
 
     def get_metadata(self) -> dict:
         return {
@@ -175,7 +189,7 @@ class HTMLToMarkdown(HTMLParser):
 # Direct fetch (bez Firecrawl)
 # ---------------------------------------------------------------------------
 
-def direct_fetch(url: str) -> dict | None:
+def direct_fetch(url: str, article_mode: bool = False) -> dict | None:
     """Próbuje pobrać stronę bezpośrednio. Zwraca dict kompatybilny z Firecrawl lub None."""
     req = Request(url, headers={"User-Agent": USER_AGENT})
 
@@ -209,7 +223,7 @@ def direct_fetch(url: str) -> dict | None:
         print(f"[direct] Błąd parsowania HTML: {e} — przechodzę na Firecrawl", file=sys.stderr)
         return None
 
-    markdown = parser.get_markdown()
+    markdown = parser.get_markdown(article_mode=article_mode)
 
     if len(markdown) < MIN_CONTENT_LENGTH:
         print(f"[direct] Za mało treści ({len(markdown)} znaków) — przechodzę na Firecrawl", file=sys.stderr)
@@ -430,6 +444,8 @@ def main():
                         help="Format wyjścia (domyślnie: markdown)")
     parser.add_argument("--force-firecrawl", action="store_true",
                         help="Pomiń direct fetch, od razu użyj Firecrawl")
+    parser.add_argument("--article", action="store_true",
+                        help="Tryb artykułu: utnij nawigację przed pierwszym <h1>")
     args = parser.parse_args()
 
     data = None
@@ -437,7 +453,7 @@ def main():
     # Krok 1: Direct fetch (chyba że wymuszono Firecrawl)
     if not args.force_firecrawl:
         print(f"[direct] Próbuję pobrać: {args.url}", file=sys.stderr)
-        data = direct_fetch(args.url)
+        data = direct_fetch(args.url, article_mode=args.article)
 
     # Krok 2: Firecrawl jako fallback
     if data is None:
