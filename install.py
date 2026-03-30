@@ -13,7 +13,7 @@ SKILLS_DIR = Path.home() / ".claude" / "skills"
 CONFIG_SRC = REPO_DIR / "config.json"
 CONFIG_DST = SKILLS_DIR / "joe-config.json"
 
-SKILLS = ["audio-transcript", "joemonster-art", "web-scraper"]
+SKILLS = ["ai-image-gen", "audio-transcript", "joemonster-art", "web-scraper"]
 
 
 def main():

@@ -159,6 +159,7 @@ python3 install.py
 
 | Skill | Opis |
 |-------|------|
+| `ai-image-gen` | Generowanie obrazów AI (10 modeli: Gemini, Flux, GPT Image, Recraft) |
 | `audio-transcript` | Transkrypcja audio z podziałem na mówców (Gemini Flash) |
 | `joemonster-art` | Formatowanie artykułów HTML dla JoeMonster.org |
 | `web-scraper` | Scraping artykułów do markdown (direct fetch + Firecrawl) |
