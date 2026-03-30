@@ -7,7 +7,7 @@ Skille Claude Code do użytku wewnętrznego.
 Otwórz Claude Code i wklej ten prompt:
 
 ```
-Sklonuj repo https://github.com/joemonster/joe-skills.git do ~/Appki/joe-skills (jeśli jeszcze nie istnieje), a potem uruchom python install.py z tego folderu. Jeśli w repo nie ma pliku config.json, powiedz mi że muszę go dostać od admina i wrzucić do folderu repo, a potem odpalić install.py jeszcze raz.
+Sprawdź czy mam zainstalowane git i python3 — jeśli nie, zainstaluj je (na macOS przez brew, na Windows pobierz instalatory). Potem sklonuj repo https://github.com/joemonster/joe-skills.git do ~/Appki/joe-skills (jeśli jeszcze nie istnieje) i uruchom python install.py z tego folderu. Jeśli w repo nie ma pliku config.json, powiedz mi że muszę go dostać od admina i wrzucić do folderu repo, a potem odpalić install.py jeszcze raz.
 ```
 
 ## Instalacja od zera
