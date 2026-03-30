@@ -18,6 +18,22 @@ Skille Claude Code do użytku wewnętrznego.
 2. **Ważne:** przy instalacji zaznacz **"Add Python to PATH"** na dole
 3. Sprawdź w PowerShell: `python --version`
 
+#### Node.js (potrzebny do Claude Code)
+
+1. Pobierz z https://nodejs.org/ (wersja LTS)
+2. Zainstaluj — wszystkie opcje domyślne
+3. Sprawdź w PowerShell: `node --version`
+
+#### Claude Code
+
+W PowerShell:
+
+```powershell
+npm install -g @anthropic-ai/claude-code
+```
+
+Po instalacji uruchom `claude` w PowerShell żeby się zalogować.
+
 #### PowerShell
 
 Naciśnij `Win + R`, wpisz `powershell`, naciśnij Enter. Wszystkie komendy poniżej wpisuj tam.
@@ -78,6 +94,22 @@ Jeśli nie masz, zainstaluj przez Homebrew:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 brew install python
 ```
+
+#### Node.js (potrzebny do Claude Code)
+
+```bash
+brew install node
+```
+
+Albo pobierz z https://nodejs.org/ (wersja LTS). Sprawdź: `node --version`
+
+#### Claude Code
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+Po instalacji uruchom `claude` w Terminalu żeby się zalogować.
 
 #### Terminal
 
