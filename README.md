@@ -2,6 +2,18 @@
 
 Skille Claude Code do użytku wewnętrznego.
 
+## Szybka instalacja (jeśli masz już Claude Code)
+
+Otwórz Claude Code i wklej ten prompt:
+
+```
+Sklonuj repo https://github.com/joemonster/joe-skills.git do ~/Appki/joe-skills (jeśli jeszcze nie istnieje), a potem uruchom python install.py z tego folderu. Jeśli w repo nie ma pliku config.json, powiedz mi że muszę go dostać od admina i wrzucić do folderu repo, a potem odpalić install.py jeszcze raz.
+```
+
+## Instalacja od zera
+
+Jeśli nie masz jeszcze Claude Code, Git lub Pythona — poniżej instrukcje krok po kroku.
+
 ## Instalacja na Windows
 
 ### Wymagania
