@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """
 Audio Transcription with Speaker Diarization via Gemini Flash.
+Accepts local files or URLs (YouTube, Twitter/X, etc.) — downloads audio automatically.
 """
 
 import argparse
 import json
 import os
+import re
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -14,10 +18,11 @@ from pathlib import Path
 PRICE_INPUT_AUDIO_PER_1M = 1.00
 PRICE_OUTPUT_PER_1M = 3.00
 
+URL_PATTERN = re.compile(r'^https?://')
+
 
 def load_config():
-    """Load joe-config.json from ~/.claude/skills/."""
-    config_path = Path.home() / ".claude" / "skills" / "joe-config.json"
+    config_path = Path(__file__).parent / "config.json"
     if config_path.exists():
         with open(config_path) as f:
             return json.load(f)
@@ -27,7 +32,7 @@ def load_config():
 def get_api_key():
     key = os.environ.get("GEMINI_API_KEY") or load_config().get("gemini_api_key")
     if not key:
-        print("ERROR: No Gemini API key. Set GEMINI_API_KEY env var or add gemini_api_key to ~/.claude/skills/joe-config.json", file=sys.stderr)
+        print("ERROR: No Gemini API key. Set GEMINI_API_KEY or add gemini_api_key to config.json", file=sys.stderr)
         sys.exit(1)
     return key
 
@@ -113,9 +118,60 @@ def print_usage(usage: dict):
     print(f"Koszt: ${usage['cost_total_usd']:.4f} (~{usage['cost_total_pln']:.2f} PLN)")
 
 
+def download_audio(url: str) -> tuple[str, str]:
+    """Download audio from URL using yt-dlp. Returns (temp_filepath, title)."""
+    try:
+        subprocess.run(["yt-dlp", "--version"], capture_output=True, check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        print("ERROR: yt-dlp not installed. Install with: pip install yt-dlp", file=sys.stderr)
+        sys.exit(1)
+
+    tmp_dir = tempfile.mkdtemp(prefix="transcript_")
+    output_template = os.path.join(tmp_dir, "%(id)s.%(ext)s")
+
+    print(f"Downloading audio from: {url}")
+    cmd = [
+        "yt-dlp",
+        "-x", "--audio-format", "mp3",
+        "--audio-quality", "5",  # medium quality, smaller file
+        "--no-playlist",
+        "--no-write-thumbnail",
+        "--restrict-filenames",
+        "-o", output_template,
+        url,
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"ERROR: yt-dlp failed:\n{result.stderr}", file=sys.stderr)
+        sys.exit(1)
+
+    # Find the downloaded mp3
+    mp3_files = list(Path(tmp_dir).glob("*.mp3"))
+    if not mp3_files:
+        # yt-dlp might have kept original format if ffmpeg unavailable
+        all_files = list(Path(tmp_dir).iterdir())
+        if all_files:
+            mp3_files = all_files
+        else:
+            print("ERROR: No audio file downloaded.", file=sys.stderr)
+            sys.exit(1)
+
+    filepath = str(mp3_files[0])
+
+    # Get title for output filename
+    title_cmd = ["yt-dlp", "--get-title", "--no-playlist", url]
+    title_result = subprocess.run(title_cmd, capture_output=True, text=True)
+    title = title_result.stdout.strip() if title_result.returncode == 0 else mp3_files[0].stem
+    # Sanitize title for filename
+    title = re.sub(r'[<>:"/\\|?*]', '_', title)[:80]
+
+    print(f"Downloaded: {Path(filepath).name} ({Path(filepath).stat().st_size / (1024*1024):.1f} MB)")
+    return filepath, title
+
+
 def main():
     parser = argparse.ArgumentParser(description="Transcribe audio with Gemini Flash (speaker diarization)")
-    parser.add_argument("file", help="Path to audio file (mp3, m4a, wav, etc.)")
+    parser.add_argument("source", help="Path to audio file OR URL (YouTube, Twitter/X, etc.)")
     parser.add_argument("-o", "--output", help="Output file path (default: <input>_transcript.txt)")
     parser.add_argument("--lang", default=None, help="Language code (e.g. pl, en, de). Auto-detect if not set.")
     parser.add_argument("--speakers", type=int, default=None, help="Expected number of speakers (auto-detect if not set)")
@@ -123,24 +179,47 @@ def main():
     args = parser.parse_args()
     api_key = get_api_key()
 
-    output, usage = transcribe(args.file, api_key, args.lang, args.speakers)
+    # Determine if source is URL or local file
+    is_url = bool(URL_PATTERN.match(args.source))
+    temp_file = None
+    title = None
 
-    # Determine output path
-    if args.output:
-        output_path = Path(args.output)
+    if is_url:
+        audio_path, title = download_audio(args.source)
+        temp_file = audio_path
     else:
-        input_path = Path(args.file)
-        output_path = input_path.parent / f"{input_path.stem}_transcript.txt"
+        audio_path = args.source
 
-    # Write output
-    output_path.write_text(output, encoding="utf-8")
-    print(f"Transcript saved to: {output_path}")
+    try:
+        output, usage = transcribe(audio_path, api_key, args.lang, args.speakers)
 
-    # Print usage stats
-    print_usage(usage)
+        # Determine output path
+        downloads = Path.home() / "Downloads"
+        if args.output:
+            output_path = Path(args.output)
+        elif is_url and title:
+            output_path = downloads / f"{title}_transcript.txt"
+        else:
+            output_path = downloads / f"{Path(audio_path).stem}_transcript.txt"
 
-    # Print transcript to stdout
-    print("\n" + output)
+        # Write output
+        output_path.write_text(output, encoding="utf-8")
+        print(f"Transcript saved to: {output_path}")
+
+        # Print usage stats
+        print_usage(usage)
+
+        # Print transcript to stdout
+        print("\n" + output)
+    finally:
+        # Clean up temp file
+        if temp_file:
+            try:
+                Path(temp_file).unlink(missing_ok=True)
+                Path(temp_file).parent.rmdir()
+                print(f"Cleaned up temp audio file.")
+            except OSError:
+                pass
 
 
 if __name__ == "__main__":
