@@ -38,7 +38,7 @@ python ~/.claude/skills/audio-transcript/scripts/transcribe.py "https://youtube.
 
 | Option | Flag | Example |
 |--------|------|---------|
-| Language | `--lang` | `--lang pl` |
+| Language | `--lang` | `--lang en` (default: pl, use `original` to keep source) |
 | Speaker count | `--speakers` | `--speakers 3` |
 | Custom output | `-o` | `-o result.txt` |
 

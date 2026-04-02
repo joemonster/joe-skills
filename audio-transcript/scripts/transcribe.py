@@ -58,10 +58,18 @@ def transcribe(filepath: str, api_key: str, language: str = None,
         sys.exit(1)
     print("Upload complete. Transcribing...")
 
-    lang_hint = f" Language: {language}." if language else ""
     speakers_hint = f" Expected speakers: {speakers_expected}." if speakers_expected else ""
 
-    prompt = f"""Transcribe the following audio recording.{lang_hint}{speakers_hint}
+    if language and language.lower() == "original":
+        translate_instruction = "Transcribe in the original language of the audio."
+    elif language:
+        translate_instruction = f"Transcribe and translate the output to {language}."
+    else:
+        translate_instruction = "Transcribe and translate the output to Polish (pl)."
+
+    prompt = f"""Transcribe the following audio recording.{speakers_hint}
+
+{translate_instruction}
 
 RULES:
 - Output ONLY the transcription. No introduction, no commentary, no summary.
@@ -173,7 +181,7 @@ def main():
     parser = argparse.ArgumentParser(description="Transcribe audio with Gemini Flash (speaker diarization)")
     parser.add_argument("source", help="Path to audio file OR URL (YouTube, Twitter/X, etc.)")
     parser.add_argument("-o", "--output", help="Output file path (default: <input>_transcript.txt)")
-    parser.add_argument("--lang", default=None, help="Language code (e.g. pl, en, de). Auto-detect if not set.")
+    parser.add_argument("--lang", default=None, help="Output language (default: pl). Use 'original' to keep source language.")
     parser.add_argument("--speakers", type=int, default=None, help="Expected number of speakers (auto-detect if not set)")
 
     args = parser.parse_args()
