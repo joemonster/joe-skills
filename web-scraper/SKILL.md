@@ -68,6 +68,10 @@ python /path/to/scripts/scrape.py "https://example.com/article" --force-firecraw
 
 Set `FIRECRAWL_API_KEY` env var or add `firecrawl_api_key` to `~/.claude/skills/joe-config.json`.
 
+## Site-Specific Handling
+
+- **joemonster.org/art/** — article content is extracted from `div#arcik` only, skipping navigation, sidebar, and comments. Metadata (title, og:image) is still read from the full page.
+
 ## Important Notes
 
 - **Direct fetch is tried first** — saves Firecrawl API credits.

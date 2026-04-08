@@ -186,6 +186,45 @@ class HTMLToMarkdown(HTMLParser):
 
 
 # ---------------------------------------------------------------------------
+# HTML extraction helpers
+# ---------------------------------------------------------------------------
+
+def _extract_div_by_id(html: str, div_id: str) -> str | None:
+    """Extract content of a div with given id from HTML. Returns inner HTML or None."""
+    # Find opening tag with id
+    pattern = re.compile(
+        rf'<div[^>]*\bid=["\']?{re.escape(div_id)}["\']?[^>]*>',
+        re.IGNORECASE | re.DOTALL,
+    )
+    match = pattern.search(html)
+    if not match:
+        return None
+
+    start = match.start()
+    pos = match.end()
+    depth = 1
+
+    while depth > 0 and pos < len(html):
+        open_match = re.search(r'<div[\s>]', html[pos:], re.IGNORECASE)
+        close_match = re.search(r'</div\s*>', html[pos:], re.IGNORECASE)
+
+        if close_match is None:
+            break
+
+        if open_match and open_match.start() < close_match.start():
+            depth += 1
+            pos += open_match.end()
+        else:
+            depth -= 1
+            if depth == 0:
+                end = pos + close_match.end()
+                return html[start:end]
+            pos += close_match.end()
+
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Direct fetch (bez Firecrawl)
 # ---------------------------------------------------------------------------
 
@@ -215,13 +254,31 @@ def direct_fetch(url: str, article_mode: bool = False) -> dict | None:
         print(f"[direct] Błąd: {e} — przechodzę na Firecrawl", file=sys.stderr)
         return None
 
-    # Parsuj HTML
+    # JoeMonster /art/ — wyciągnij treść z div#arcik, metadane z pełnego HTML
+    article_html = html
+    if re.search(r'joemonster\.org/art/\d+', url):
+        extracted = _extract_div_by_id(html, "arcik")
+        if extracted:
+            article_html = extracted
+            print(f"[direct] JoeMonster /art/ — użyto div#arcik", file=sys.stderr)
+
+    # Parsuj metadane z pełnego HTML
+    meta_parser = HTMLToMarkdown()
+    try:
+        meta_parser.feed(html)
+    except Exception:
+        pass
+
+    # Parsuj treść z artykułu (może być div#arcik lub pełny HTML)
     parser = HTMLToMarkdown()
     try:
-        parser.feed(html)
+        parser.feed(article_html)
     except Exception as e:
         print(f"[direct] Błąd parsowania HTML: {e} — przechodzę na Firecrawl", file=sys.stderr)
         return None
+
+    # Użyj metadanych z pełnego HTML, treści z artykułu
+    parser.meta = {**parser.meta, **meta_parser.meta}
 
     markdown = parser.get_markdown(article_mode=article_mode)
 
