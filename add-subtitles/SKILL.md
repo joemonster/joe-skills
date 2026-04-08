@@ -48,6 +48,10 @@ python ~/.claude/skills/add-subtitles/scripts/add_subtitles.py "https://youtube.
 | Output path | `-o` | `~/Downloads/<title>_subtitled.mp4` | `-o result.mp4` |
 | SRT only | `--srt-only` | off | `--srt-only` |
 
+## Video Quality
+
+Output video matches the source bitrate — the script reads the original video's bitrate via ffprobe and passes it to ffmpeg as `-b:v`. This avoids inflating or deflating file size compared to the input. If bitrate can't be detected, ffmpeg uses its default encoding.
+
 ## Requirements
 
 - `yt-dlp` — for URL downloads (`pip install yt-dlp`)

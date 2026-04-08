@@ -176,9 +176,24 @@ STYLES = {
 }
 
 
+def get_video_bitrate(video_path: str) -> int | None:
+    """Get video stream bitrate in bits/s using ffprobe."""
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0",
+             "-show_entries", "stream=bit_rate", "-of", "csv=p=0", video_path],
+            capture_output=True, text=True
+        )
+        br = result.stdout.strip()
+        return int(br) if br and br != "N/A" else None
+    except Exception:
+        return None
+
+
 def burn_subtitles(video_path: str, srt_path: str, output_path: str,
                    font_size: int = 18, style: str = "light"):
-    """Burn subtitles into video using ffmpeg subtitles filter."""
+    """Burn subtitles into video using ffmpeg subtitles filter.
+    Matches source video bitrate to avoid quality/size changes."""
     colors = STYLES[style]
     force_style = (
         f"FontName=Source Code Pro,"
@@ -200,10 +215,15 @@ def burn_subtitles(video_path: str, srt_path: str, output_path: str,
 
     vf = f"subtitles='{srt_escaped}':fontsdir='{fonts_escaped}':force_style='{force_style}'"
 
+    # Match source video bitrate to preserve original compression level
+    bitrate = get_video_bitrate(video_path)
+    video_opts = ["-b:v", str(bitrate)] if bitrate else []
+
     cmd = [
         "ffmpeg", "-y",
         "-i", video_path,
         "-vf", vf,
+        *video_opts,
         "-c:a", "copy",
         output_path,
     ]
