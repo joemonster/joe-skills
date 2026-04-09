@@ -22,8 +22,9 @@ CONFIG_PATHS = [
 ]
 URL_PATTERN = re.compile(r'^https?://')
 
+GEMINI_MODEL = "gemini-2.5-flash"
 PRICE_INPUT_AUDIO_PER_1M = 1.00
-PRICE_OUTPUT_PER_1M = 3.00
+PRICE_OUTPUT_PER_1M = 2.50
 
 
 def get_api_key():
@@ -139,7 +140,7 @@ STRICT RULES:
 - Start with subtitle number 1. Output nothing else."""
 
     response = client.models.generate_content(
-        model="gemini-3-flash-preview",
+        model=GEMINI_MODEL,
         contents=[prompt, uploaded],
     )
 
